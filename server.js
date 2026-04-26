@@ -1,30 +1,35 @@
-const express = require("express");
-const path = require("path");
-const app = express();
+const { Client } = require('instagrapi');
+const cron = require('node-cron');
 
-app.use(express.static(path.join(__dirname, "public")));
+const client = new Client();
 
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+// Instagram credentials
+const username = 'YOUR_INSTAGRAM_USERNAME';
+const password = 'YOUR_INSTAGRAM_PASSWORD';
+
+// Connect to Instagram
+client.login(username, password);
+
+// Daily post at 10 AM
+cron.schedule('0 10 * * *', async () => {
+    try {
+        const template = `🌟 Junk Removal Special! 🌟\n🚛 Fast and reliable junk removal services! Contact us today!`;
+        await client.media.publishPhoto({ photo: 'path-to-your-image.jpg', caption: template });
+        console.log('Posted to Instagram at 10 AM!');
+    } catch (error) {
+        console.error('Error posting to Instagram:', error);
+    }
 });
 
-app.get("/generate", (req, res) => {
-  const ideas = [
-    "Scrap metal haul transformation 🔧",
-    "Before & after junk removal 💥",
-    "Free pickup in your area 🚛",
-    "Turn junk into cash 💰",
-    "Clean yard transformation 🔥"
-  ];
-
-  const random = ideas[Math.floor(Math.random() * ideas.length)];
-
-  res.json({
-    caption: random,
-    hashtags: "#scrapmetal #junkremoval #sidehustle #cleanup #localbusiness"
-  });
+// Manual posting endpoint
+app.post('/api/post', async (req, res) => {
+    const { caption, imagePath } = req.body;
+    try {
+        await client.media.publishPhoto({ photo: imagePath, caption: caption });
+        res.status(201).send('Post created successfully');
+    } catch (error) {
+        res.status(500).send('Error creating post');
+    }
 });
 
-app.listen(3000, () => {
-  console.log("Running on port 3000");
-});
+module.exports = app;
